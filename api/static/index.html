@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wine Quality Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0e1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    h1 { font-size: 1.8rem; font-weight: 700; color: #fff; }
+    .subtitle { color: #888; margin-top: 0.4rem; margin-bottom: 2rem; font-size: 0.95rem; }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 600; color: #a0aec0; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      color: #718096;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      background: #0e1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: #6c63ff;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      background: #6c63ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 1rem;
+    }
+
+    button:hover { background: #5a52e0; }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #444; cursor: not-allowed; }
+
+    /* Result card */
+    .result { display: none; }
+    .result.visible { display: block; }
+
+    .verdict {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .verdict-badge {
+      font-size: 2rem;
+      font-weight: 800;
+      padding: 0.4rem 1.2rem;
+      border-radius: 10px;
+    }
+
+    .good .verdict-badge  { background: rgba(0,201,167,0.15); color: #00c9a7; }
+    .bad  .verdict-badge  { background: rgba(255,101,132,0.15); color: #ff6584; }
+
+    .verdict-info h3 { font-size: 1.1rem; font-weight: 600; }
+    .verdict-info p  { font-size: 0.85rem; color: #888; margin-top: 0.2rem; }
+
+    .confidence-label {
+      font-size: 0.8rem;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .bar-track {
+      background: #2d3748;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+
+    .good .bar-fill { background: #00c9a7; }
+    .bad  .bar-fill { background: #ff6584; }
+
+    .conf-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .good .conf-value { color: #00c9a7; }
+    .bad  .conf-value { color: #ff6584; }
+
+    .error-msg { color: #ff6584; font-size: 0.9rem; margin-top: 0.8rem; display: none; }
+
+    .api-link { font-size: 0.8rem; color: #555; margin-top: 1rem; text-align: center; }
+    .api-link a { color: #6c63ff; text-decoration: none; }
+    .api-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍷 Wine Quality Predictor</h1>
+    <p class="subtitle">Enter physicochemical properties of a red wine — the model predicts whether it's good quality (score ≥ 6) or not.</p>
+
+    <div class="card">
+      <h2>Wine Features</h2>
+      <div class="grid">
+        <div class="field"><label>Fixed Acidity (g/dm³)</label><input type="number" id="fixed_acidity" step="0.1" value="7.4"></div>
+        <div class="field"><label>Volatile Acidity (g/dm³)</label><input type="number" id="volatile_acidity" step="0.01" value="0.70"></div>
+        <div class="field"><label>Citric Acid (g/dm³)</label><input type="number" id="citric_acid" step="0.01" value="0.00"></div>
+        <div class="field"><label>Residual Sugar (g/dm³)</label><input type="number" id="residual_sugar" step="0.1" value="1.9"></div>
+        <div class="field"><label>Chlorides (g/dm³)</label><input type="number" id="chlorides" step="0.001" value="0.076"></div>
+        <div class="field"><label>Free Sulfur Dioxide (mg/dm³)</label><input type="number" id="free_sulfur_dioxide" step="1" value="11"></div>
+        <div class="field"><label>Total Sulfur Dioxide (mg/dm³)</label><input type="number" id="total_sulfur_dioxide" step="1" value="34"></div>
+        <div class="field"><label>Density (g/cm³)</label><input type="number" id="density" step="0.0001" value="0.9978"></div>
+        <div class="field"><label>pH</label><input type="number" id="ph" step="0.01" value="3.51"></div>
+        <div class="field"><label>Sulphates (g/dm³)</label><input type="number" id="sulphates" step="0.01" value="0.56"></div>
+        <div class="field"><label>Alcohol (% vol)</label><input type="number" id="alcohol" step="0.1" value="9.4"></div>
+      </div>
+      <button id="predict-btn" onclick="predict()">Predict Quality</button>
+      <p class="error-msg" id="error-msg"></p>
+    </div>
+
+    <div class="card result" id="result-card">
+      <h2>Prediction Result</h2>
+      <div class="verdict" id="verdict">
+        <span class="verdict-badge" id="verdict-badge"></span>
+        <div class="verdict-info">
+          <h3 id="verdict-title"></h3>
+          <p id="verdict-sub"></p>
+        </div>
+      </div>
+      <p class="confidence-label">Model Confidence</p>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+      <p class="conf-value" id="conf-value"></p>
+    </div>
+
+    <p class="api-link">REST API → <a href="/docs" target="_blank">/docs</a> · <a href="/health" target="_blank">/health</a></p>
+  </div>
+
+  <script>
+    async function predict() {
+      const btn = document.getElementById('predict-btn');
+      const errEl = document.getElementById('error-msg');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Predicting…';
+
+      const fields = ['fixed_acidity','volatile_acidity','citric_acid','residual_sugar',
+                      'chlorides','free_sulfur_dioxide','total_sulfur_dioxide','density',
+                      'ph','sulphates','alcohol'];
+
+      const body = {};
+      for (const f of fields) {
+        const val = parseFloat(document.getElementById(f).value);
+        if (isNaN(val)) {
+          errEl.textContent = `Please enter a valid number for ${f.replace(/_/g,' ')}.`;
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Predict Quality';
+          return;
+        }
+        body[f] = val;
+      }
+
+      try {
+        const res = await fetch('/predict', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || `Server error ${res.status}`);
+        }
+
+        const data = await res.json();
+        showResult(data);
+      } catch (e) {
+        errEl.textContent = `Error: ${e.message}`;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Predict Quality';
+      }
+    }
+
+    function showResult(data) {
+      const card    = document.getElementById('result-card');
+      const verdict = document.getElementById('verdict');
+      const badge   = document.getElementById('verdict-badge');
+      const title   = document.getElementById('verdict-title');
+      const sub     = document.getElementById('verdict-sub');
+      const bar     = document.getElementById('bar-fill');
+      const conf    = document.getElementById('conf-value');
+
+      const isGood = data.label === 'good';
+      const pct    = Math.round(data.confidence * 100);
+
+      card.className    = `card result visible ${data.label}`;
+      verdict.className = `verdict ${data.label}`;
+
+      badge.textContent = isGood ? 'GOOD' : 'BAD';
+      title.textContent = isGood ? 'Good Quality Wine' : 'Below Average Quality';
+      sub.textContent   = `The model predicts this wine scores ${isGood ? '≥ 6' : '< 6'} out of 10.`;
+      conf.textContent  = `${pct}% confident`;
+
+      setTimeout(() => { bar.style.width = `${pct}%`; }, 50);
+    }
+  </script>
+</body>
+</html>

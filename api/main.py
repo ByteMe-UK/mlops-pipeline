@@ -12,6 +12,7 @@ import sys
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 MODEL_PATH = "models/classifier.joblib"
@@ -54,13 +55,11 @@ class PredictionResponse(BaseModel):
     features: dict
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    return {
-        "message": "Wine Quality Classifier API",
-        "docs": "/docs",
-        "endpoints": {"predict": "POST /predict", "health": "GET /health"},
-    }
+    html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    with open(html_path) as f:
+        return f.read()
 
 
 @app.get("/health")
