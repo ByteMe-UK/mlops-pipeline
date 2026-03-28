@@ -10,7 +10,7 @@ An end-to-end **MLOps pipeline** — data ingestion → model training with expe
 
 ## 🚀 Live API
 
-> 🔗 **[API on Render →](https://mlops-pipeline.onrender.com)** · **[Swagger Docs →](https://mlops-pipeline.onrender.com/docs)**
+> 🔗 **[Live App →](https://mlops-pipeline-x734.onrender.com)** · **[Swagger Docs →](https://mlops-pipeline-x734.onrender.com/docs)**
 >
 > ⚠️ Free tier — may take 30–60s to wake up on first request.
 
